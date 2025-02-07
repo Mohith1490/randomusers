@@ -1,101 +1,120 @@
-import Image from "next/image";
+"use client";
+
+import Card from "@/components/Card";
+import { FormEvent, useState } from "react";
+
+interface User {
+  gender: string;
+  name: {
+    first: string;
+    last: string;
+  };
+  phone: string;
+  picture: {
+    large: string;
+  };
+}
 
 export default function Home() {
-  return (
-    <div className="grid grid-rows-[20px_1fr_20px] items-center justify-items-center min-h-screen p-8 pb-20 gap-16 sm:p-20 font-[family-name:var(--font-geist-sans)]">
-      <main className="flex flex-col gap-8 row-start-2 items-center sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={180}
-          height={38}
-          priority
-        />
-        <ol className="list-inside list-decimal text-sm text-center sm:text-left font-[family-name:var(--font-geist-mono)]">
-          <li className="mb-2">
-            Get started by editing{" "}
-            <code className="bg-black/[.05] dark:bg-white/[.06] px-1 py-0.5 rounded font-semibold">
-              app/page.tsx
-            </code>
-            .
-          </li>
-          <li>Save and see your changes instantly.</li>
-        </ol>
+  const [users, setUsers] = useState<User[]>([]);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [userCount, setUserCount] = useState(5);
 
-        <div className="flex gap-4 items-center flex-col sm:flex-row">
-          <a
-            className="rounded-full border border-solid border-transparent transition-colors flex items-center justify-center bg-foreground text-background gap-2 hover:bg-[#383838] dark:hover:bg-[#ccc] text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={20}
-              height={20}
+
+  const fetchUsers = async (page: number, count: number) => {
+    const response = await fetch(`https://randomuser.me/api/?page=${page}&results=${count}`);
+    const data = await response.json();
+    setUsers(data.results);
+  };
+
+  const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    const formData = new FormData(event.currentTarget);
+    const count = Number(formData.get("data"));
+
+    if (!count || count <= 0) {
+      alert("Please enter a valid number of users.");
+      return;
+    }
+
+    setUserCount(count);
+    setCurrentPage(1);
+    fetchUsers(1, count);
+  };
+
+
+  const handleNextPage = () => {
+    setCurrentPage((prev) => {
+      const newPage = prev + 1;
+      fetchUsers(newPage, userCount);
+      return newPage;
+    });
+  };
+
+  const handlePrevPage = () => {
+    if (currentPage > 1) {
+      setCurrentPage((prev) => {
+        const newPage = prev - 1;
+        fetchUsers(newPage, userCount);
+        return newPage;
+      });
+    }
+  };
+
+  return (
+    <div className="min-h-screen flex flex-col items-center p-4">
+      <h1 className="text-3xl font-bold text-center mb-6">User Generator</h1>
+
+
+      <div className="w-full max-w-xl bg-white p-5 rounded-xl shadow-md border border-gray-300 mx-auto">
+        <form onSubmit={handleSubmit} className="flex flex-col md:flex-row items-center">
+          <h1 className="name text-lg md:text-xl mb-4 md:mb-0">No Of Users:</h1>
+          <div className="flex items-center w-full md:w-auto">
+            <input
+              type="number"
+              name="data"
+              className="w-full md:w-50 h-10 p-5 border-2 border-black rounded-2xl mb-4 md:mb-0 md:mr-6"
             />
-            Deploy now
-          </a>
-          <a
-            className="rounded-full border border-solid border-black/[.08] dark:border-white/[.145] transition-colors flex items-center justify-center hover:bg-[#f2f2f2] dark:hover:bg-[#1a1a1a] hover:border-transparent text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 sm:min-w-44"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
+            <button type="submit" className="submitbutton">
+              Submit
+            </button>
+          </div>
+        </form>
+      </div>
+
+
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-2 gap-6 mt-8 w-[70%] px-4">
+        {users.map((user, index) => (
+          <Card
+            key={index}
+            firstname={user.name.first}
+            lastname={user.name.last}
+            gender={user.gender}
+            mobileno={user.phone}
+            image={user.picture.large}
+          />
+        ))}
+      </div>
+
+
+      {users.length > 0 && (
+        <div className="flex gap-4 mt-6 justify-center items-center">
+          <button
+            onClick={handlePrevPage}
+            disabled={currentPage === 1}
+            className="bg-black text-white px-4 py-2 rounded-md hover:bg-gray-600 disabled:opacity-50"
           >
-            Read our docs
-          </a>
+            Previous
+          </button>
+          <span className="text-lg font-bold">Page {currentPage}</span>
+          <button
+            onClick={handleNextPage}
+            className="bg-black text-white px-4 py-2 rounded-md hover:bg-blue-700"
+          >
+            Next
+          </button>
         </div>
-      </main>
-      <footer className="row-start-3 flex gap-6 flex-wrap items-center justify-center">
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/file.svg"
-            alt="File icon"
-            width={16}
-            height={16}
-          />
-          Learn
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/window.svg"
-            alt="Window icon"
-            width={16}
-            height={16}
-          />
-          Examples
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/globe.svg"
-            alt="Globe icon"
-            width={16}
-            height={16}
-          />
-          Go to nextjs.org →
-        </a>
-      </footer>
+      )}
     </div>
   );
 }
